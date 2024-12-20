@@ -1,5 +1,5 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core'); // Note: puppeteer-core used instead of puppeteer
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,11 +15,12 @@ app.get('/filtered-iframe', async (req, res) => {
   console.log('Received request at /filtered-iframe');
 
   try {
-    console.log('Launching Puppeteer...');
+    console.log('Launching Puppeteer Core...');
+    // Use executablePath from environment variable set by puppeteer buildpack
     browser = await puppeteer.launch({
-      headless: 'new', // If 'new' causes issues, use true instead: headless: true
+      headless: true, 
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      executablePath: process.env.CHROME_PATH // Use Chromium installed by buildpack
+      executablePath: process.env.CHROME_PATH
     });
 
     console.log('Opening new page...');
