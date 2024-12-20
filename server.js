@@ -1,13 +1,10 @@
 const express = require('express');
-const puppeteer = require('puppeteer-core');
+const puppeteer = require('puppeteer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// URL of the Spond page
 const SPOND_URL = 'https://club.spond.com/landing/signup/uibk/form/B14624E3E6D9403AB9F922BD7AD6FC7A';
-
-// CSS selector for the target div
 const TARGET_SELECTOR = 'div.sc-CNKsk.jyiliW';
 
 app.get('/filtered-iframe', async (req, res) => {
@@ -18,11 +15,15 @@ app.get('/filtered-iframe', async (req, res) => {
   console.log('CHROME_ARGS:', process.env.CHROME_ARGS);
 
   try {
-    console.log('Launching Puppeteer Core...');
+    console.log('Launching Puppeteer...');
     browser = await puppeteer.launch({
-      headless: 'new', 
+      headless: 'new', // If this causes issues, try headless: true
       executablePath: process.env.CHROME_PATH,
-      args: [...(process.env.CHROME_ARGS || '').split(' '), '--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : []),
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ]
     });
 
     console.log('Opening new page...');
