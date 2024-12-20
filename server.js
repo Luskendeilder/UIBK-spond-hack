@@ -17,8 +17,9 @@ app.get('/filtered-iframe', async (req, res) => {
   try {
     console.log('Launching Puppeteer...');
     browser = await puppeteer.launch({
-      headless: 'new', // or true if 'new' not supported
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: 'new', // If 'new' causes issues, use true instead: headless: true
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      executablePath: process.env.CHROME_PATH // Use Chromium installed by buildpack
     });
 
     console.log('Opening new page...');
