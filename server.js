@@ -4,59 +4,40 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const SPOND_URL = 'https://club.spond.com/landing/signup/uibk/form/B14624E3E6D9403AB9F922BD7AD6FC7A';
-const TARGET_SELECTOR = 'div.sc-CNKsk.jyiliW';
+// Example URL to test; replace if you like
+const TEST_URL = 'https://www.google.com';
 
-app.get('/filtered-iframe', async (req, res) => {
+app.get('/', (req, res) => {
+  res.send(`Puppeteer test server is running on port ${PORT}. Try /scrape`);
+});
+
+app.get('/scrape', async (req, res) => {
   let browser;
-
-  console.log('Received request at /filtered-iframe');
-  console.log('CHROME_PATH:', process.env.CHROME_PATH);
-  console.log('CHROME_ARGS:', process.env.CHROME_ARGS);
-
   try {
-    console.log('Launching Puppeteer...');
+    // Log environment for debugging
+    console.log('CHROME_PATH:', process.env.CHROME_PATH);
+    console.log('CHROME_ARGS:', process.env.CHROME_ARGS);
+
     browser = await puppeteer.launch({
-      headless: 'new', // If this causes issues, try headless: true
-      executablePath: process.env.CHROME_PATH,
+      headless: true,
+      executablePath: process.env.CHROME_PATH, // Provided by the buildpack
       args: [
         ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : []),
         '--no-sandbox',
         '--disable-setuid-sandbox'
       ]
     });
-
-    console.log('Opening new page...');
+    
     const page = await browser.newPage();
+    await page.goto(TEST_URL, { waitUntil: 'domcontentloaded' });
+    const title = await page.title();
+    await browser.close();
 
-    console.log(`Navigating to ${SPOND_URL}`);
-    await page.goto(SPOND_URL, { waitUntil: 'domcontentloaded' });
-
-    console.log(`Waiting for selector: ${TARGET_SELECTOR}`);
-    await page.waitForSelector(TARGET_SELECTOR, { timeout: 20000 });
-
-    console.log('Selector found, extracting HTML...');
-    const extractedHTML = await page.evaluate((sel) => {
-      const targetDiv = document.querySelector(sel);
-      return targetDiv ? targetDiv.outerHTML : null;
-    }, TARGET_SELECTOR);
-
-    if (!extractedHTML) {
-      console.error('Target div not found in the DOM.');
-      return res.status(404).send('Target div not found');
-    }
-
-    console.log('Sending extracted HTML to client');
-    res.send(`<!DOCTYPE html><html><head><title>Filtered Content</title></head><body>${extractedHTML}</body></html>`);
-
-  } catch (error) {
-    console.error('Error occurred:', error);
-    res.status(500).send('An error occurred');
-  } finally {
-    if (browser) {
-      console.log('Closing browser...');
-      await browser.close();
-    }
+    res.send(`Page title is: ${title}`);
+  } catch (err) {
+    console.error('Error launching Puppeteer:', err);
+    if (browser) await browser.close();
+    res.status(500).send(`Error: ${err.message}`);
   }
 });
 
