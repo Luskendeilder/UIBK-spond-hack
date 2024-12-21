@@ -1,46 +1,62 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const fetch = require('node-fetch');
+const { JSDOM } = require('jsdom');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
-// Example URL to test; replace if you like
-const TEST_URL = 'https://www.google.com';
-
-app.get('/', (req, res) => {
-  res.send(`Puppeteer test server is running on port ${PORT}. Try /scrape`);
-});
-
-app.get('/scrape', async (req, res) => {
-  let browser;
+app.get('/', async (req, res) => {
   try {
-    // Log environment for debugging
-    console.log('CHROME_PATH:', process.env.CHROME_PATH);
-    console.log('CHROME_ARGS:', process.env.CHROME_ARGS);
+    const spondUrl = 'https://club.spond.com/landing/signup/uibk/form/B14624E3E6D9403AB9F922BD7AD6FC7A';
+    console.log(`[${new Date().toISOString()}] Fetching from URL: ${spondUrl}`);
 
-    browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.CHROME_PATH, // Provided by the buildpack
-      args: [
-        ...(process.env.CHROME_ARGS ? process.env.CHROME_ARGS.split(' ') : []),
-        '--no-sandbox',
-        '--disable-setuid-sandbox'
-      ]
-    });
-    
-    const page = await browser.newPage();
-    await page.goto(TEST_URL, { waitUntil: 'domcontentloaded' });
-    const title = await page.title();
-    await browser.close();
+    const response = await fetch(spondUrl);
+    console.log(`[${new Date().toISOString()}] Response status: ${response.status}`);
 
-    res.send(`Page title is: ${title}`);
-  } catch (err) {
-    console.error('Error launching Puppeteer:', err);
-    if (browser) await browser.close();
-    res.status(500).send(`Error: ${err.message}`);
+    if (!response.ok) {
+      console.error(`[${new Date().toISOString()}] HTTP error! status: ${response.status}`);
+      return res.status(response.status).send(`Error fetching content from Spond: ${response.statusText}`);
+    }
+
+    const html = await response.text();
+    console.log(`[${new Date().toISOString()}] HTML content fetched successfully.`);
+
+    const dom = new JSDOM(html);
+    const document = dom.window.document;
+
+    // Find the target div
+    let targetDiv = null;
+    const forms = document.querySelectorAll("form");
+    if (forms.length > 0) {
+      const form = forms[0];
+      console.log(`[${new Date().toISOString()}] Found form:`, form);
+
+      targetDiv = form.parentElement;
+      while (targetDiv && targetDiv.tagName !== "DIV") {
+        targetDiv = targetDiv.parentElement;
+      }
+
+      if (targetDiv) {
+        console.log(`[${new Date().toISOString()}] Found target div:`, targetDiv);
+
+        // Create a new HTML document with only the target div
+        const newHtml = `<!DOCTYPE html><html><head><title>Spond Form</title></head><body>${targetDiv.outerHTML}</body></html>`;
+        console.log(`[${new Date().toISOString()}] Sending new HTML`);
+        res.send(newHtml);
+      } else {
+        console.error(`[${new Date().toISOString()}] Target div not found (no div ancestor of form).`);
+        res.status(500).send('Target div not found (no div ancestor of form)');
+      }
+    } else {
+      console.error(`[${new Date().toISOString()}] No form found on the page.`);
+      res.status(500).send('No form found on the page');
+    }
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] Error:`, error);
+    res.status(500).send('Error fetching or processing content');
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Proxy server listening on port ${port}`);
 });
