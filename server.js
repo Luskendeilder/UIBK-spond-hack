@@ -1,5 +1,5 @@
 const express = require('express');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch'); // Using require() for node-fetch v2
 const { JSDOM } = require('jsdom');
 
 const app = express();
@@ -27,7 +27,7 @@ app.get('/', async (req, res) => {
     // Find the target div
     let targetDiv = null;
     const forms = document.querySelectorAll("form");
-    
+
     // Check if any forms were found
     if (forms.length > 0) {
       const form = forms[0];
