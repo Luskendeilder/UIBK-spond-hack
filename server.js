@@ -27,6 +27,8 @@ app.get('/', async (req, res) => {
     // Find the target div
     let targetDiv = null;
     const forms = document.querySelectorAll("form");
+    
+    // Check if any forms were found
     if (forms.length > 0) {
       const form = forms[0];
       console.log(`[${new Date().toISOString()}] Found form:`, form);
