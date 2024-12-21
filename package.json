@@ -1,12 +1,14 @@
 {
   "name": "spond-proxy",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "A proxy server to filter Spond content",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "puppeteer": "^19.7.5"
+    "node-fetch": "^3.3.2",
+    "jsdom": "^22.1.0"
   }
 }
